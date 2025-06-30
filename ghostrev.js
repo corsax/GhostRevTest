@@ -294,6 +294,7 @@
       bar.style.padding = "12px";
       bar.style.zIndex = "9998";
       bar.style.fontSize = "16px";
+      bar.style.height = "90px";
       bar.innerText = "Ad: This visitor will not convert — monetize them without hurting conversions.";
 
       document.body.appendChild(bar);
