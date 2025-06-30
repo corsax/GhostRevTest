@@ -1,6 +1,6 @@
 // GhostRev MVP Scoring Engine (Shopify Optimized)
-// Version: MVP 1.6
-// Description: In-browser classification engine for identifying ghost vs buyer traffic on Shopify stores with single-trigger safeguards
+// Version: MVP 1.7
+// Description: In-browser classification engine for identifying ghost vs buyer traffic on Shopify stores with improved idle-aware time scoring
 
 (function () {
   const GhostRev = {
@@ -12,6 +12,7 @@
     layer1Evaluated: false,
     evaluationTime: Date.now(),
     sessionKey: "ghostrev_score",
+    userInteracted: false,
     lastLog: {
       layer1: null,
       layer2: null,
@@ -103,8 +104,10 @@
     setupLayer2Tracking() {
       let scrollDepth = 0;
       let hoveredElements = new Set();
-      const startTime = Date.now();
       const path = window.location.pathname;
+
+      document.addEventListener("mousemove", () => { this.userInteracted = true; }, { once: true });
+      document.addEventListener("click", () => { this.userInteracted = true; }, { once: true });
 
       const now = Date.now();
       const history = JSON.parse(sessionStorage.getItem("ghostrev_nav") || "[]");
@@ -124,13 +127,13 @@
       }
 
       setTimeout(() => {
-        if (!sessionStorage.getItem("ghostrev_30s_scored")) {
+        if ((hoveredElements.size > 0 || this.userInteracted) && !sessionStorage.getItem("ghostrev_30s_scored")) {
           this.score += 1;
           sessionStorage.setItem("ghostrev_30s_scored", "1");
           this.saveSessionScore();
           if (this.debug) {
             console.group("[GhostRev] Layer 2 Interaction");
-            console.log("+1: Stayed on page > 30s");
+            console.log("+1: Stayed on page > 30s with engagement");
             console.log("Total Score:", this.score, "→ Status:", this.getClassification());
             console.groupEnd();
           }
@@ -280,7 +283,7 @@
     },
 
     init() {
-      if (this.debug) console.log("[GhostRev] Engine starting for Shopify site... V1.6");
+      if (this.debug) console.log("[GhostRev] Engine starting for Shopify site...");
       this.loadSessionScore();
       this.evaluateLayer1();
       this.setupLayer2Tracking();
