@@ -239,7 +239,7 @@
       setTimeout(() => {
         if (!this.locked && !this.triggered && this.score <= 0) {
           // this.triggerAd("Layer 2: Low interaction after cooldown");
-          this.showStickyAd(); // Trigger sticky ad if ghost.
+          this.showStickyAd(); // Trigger sticky ad if ghost
 
         }
       }, this.cooldownMs);
