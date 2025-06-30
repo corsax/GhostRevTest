@@ -240,6 +240,7 @@
         if (!this.locked && !this.triggered && this.score <= 0) {
           this.triggerAd("Layer 2: Low interaction after cooldown");
         }
+        this.showStickyAd(); // Trigger sticky ad if ghost
       }, this.cooldownMs);
     },
 
@@ -274,6 +275,32 @@
       document.body.appendChild(ad);
 
       setTimeout(() => ad.remove(), 10000);
+    },
+
+    showStickyAd() {
+      if (this.locked || this.triggered || sessionStorage.getItem("ghostrev_sticky_shown")) return;
+      if (this.getClassification() !== "Likely Ghost") return;
+
+      const bar = document.createElement("div");
+      bar.id = "ghostrev-sticky-ad";
+      bar.style.position = "fixed";
+      bar.style.bottom = "0";
+      bar.style.left = "0";
+      bar.style.width = "100%";
+      bar.style.backgroundColor = "#111";
+      bar.style.color = "#fff";
+      bar.style.textAlign = "center";
+      bar.style.padding = "12px";
+      bar.style.zIndex = "9998";
+      bar.style.fontSize = "16px";
+      bar.innerText = "Ad: This visitor will not convert — monetize them without hurting conversions.";
+
+      document.body.appendChild(bar);
+      sessionStorage.setItem("ghostrev_sticky_shown", "1");
+
+      if (this.debug) {
+        console.log("[GhostRev] Sticky bottom ad shown for ghost user");
+      }
     },
 
     getClassification() {
