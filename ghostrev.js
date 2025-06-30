@@ -280,7 +280,7 @@
     },
 
     init() {
-      if (this.debug) console.log("[GhostRev] Engine starting for Shopify site...");
+      if (this.debug) console.log("[GhostRev] Engine starting for Shopify site... V1.6");
       this.loadSessionScore();
       this.evaluateLayer1();
       this.setupLayer2Tracking();
