@@ -238,9 +238,10 @@
 
       setTimeout(() => {
         if (!this.locked && !this.triggered && this.score <= 0) {
-          this.triggerAd("Layer 2: Low interaction after cooldown");
+          // this.triggerAd("Layer 2: Low interaction after cooldown");
+          this.showStickyAd(); // Trigger sticky ad if ghost
+
         }
-        this.showStickyAd(); // Trigger sticky ad if ghost.
       }, this.cooldownMs);
     },
 
@@ -293,6 +294,7 @@
       bar.style.padding = "12px";
       bar.style.zIndex = "9998";
       bar.style.fontSize = "16px";
+      bar.style.height = "90px";
       bar.innerText = "Ad: This visitor will not convert — monetize them without hurting conversions.";
 
       document.body.appendChild(bar);
