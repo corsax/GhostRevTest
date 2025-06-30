@@ -1,6 +1,6 @@
 // GhostRev MVP Scoring Engine (Shopify Optimized)
-// Version: MVP 1.5
-// Description: In-browser classification engine for identifying ghost vs buyer traffic on Shopify stores
+// Version: MVP 1.6
+// Description: In-browser classification engine for identifying ghost vs buyer traffic on Shopify stores with single-trigger safeguards
 
 (function () {
   const GhostRev = {
@@ -106,14 +106,14 @@
       const startTime = Date.now();
       const path = window.location.pathname;
 
-      // Page skip tracking
       const now = Date.now();
       const history = JSON.parse(sessionStorage.getItem("ghostrev_nav") || "[]");
       history.push({ time: now, path });
       sessionStorage.setItem("ghostrev_nav", JSON.stringify(history.slice(-10)));
       const recent = history.slice(-3);
-      if (recent.length === 3 && (recent[2].time - recent[0].time < 20000)) {
+      if (recent.length === 3 && (recent[2].time - recent[0].time < 20000) && !sessionStorage.getItem("ghostrev_skips_scored")) {
         this.score -= 3;
+        sessionStorage.setItem("ghostrev_skips_scored", "1");
         this.saveSessionScore();
         if (this.debug) {
           console.group("[GhostRev] Layer 2 Interaction");
@@ -123,36 +123,40 @@
         }
       }
 
-      // 30s on any page
       setTimeout(() => {
-        this.score += 1;
-        this.saveSessionScore();
-        if (this.debug) {
-          console.group("[GhostRev] Layer 2 Interaction");
-          console.log("+1: Stayed on page > 30s");
-          console.log("Total Score:", this.score, "→ Status:", this.getClassification());
-          console.groupEnd();
-        }
-      }, 30000);
-
-      // 60s on product page
-      if (/\/products\//i.test(path)) {
-        setTimeout(() => {
-          this.score += 2;
+        if (!sessionStorage.getItem("ghostrev_30s_scored")) {
+          this.score += 1;
+          sessionStorage.setItem("ghostrev_30s_scored", "1");
           this.saveSessionScore();
           if (this.debug) {
             console.group("[GhostRev] Layer 2 Interaction");
-            console.log("+2: Stayed on product page > 60s");
+            console.log("+1: Stayed on page > 30s");
             console.log("Total Score:", this.score, "→ Status:", this.getClassification());
             console.groupEnd();
+          }
+        }
+      }, 30000);
+
+      if (/\/products\//i.test(path)) {
+        setTimeout(() => {
+          if (!sessionStorage.getItem("ghostrev_60s_product_scored")) {
+            this.score += 2;
+            sessionStorage.setItem("ghostrev_60s_product_scored", "1");
+            this.saveSessionScore();
+            if (this.debug) {
+              console.group("[GhostRev] Layer 2 Interaction");
+              console.log("+2: Stayed on product page > 60s");
+              console.log("Total Score:", this.score, "→ Status:", this.getClassification());
+              console.groupEnd();
+            }
           }
         }, 60000);
       }
 
-      // Idle detection after 60s
       setTimeout(() => {
-        if (hoveredElements.size === 0) {
+        if (hoveredElements.size === 0 && !sessionStorage.getItem("ghostrev_idle60_scored")) {
           this.score -= 3;
+          sessionStorage.setItem("ghostrev_idle60_scored", "1");
           this.saveSessionScore();
           if (this.debug) {
             console.group("[GhostRev] Layer 2 Interaction");
@@ -163,7 +167,6 @@
         }
       }, 60000);
 
-      // Scroll to bottom fast
       let scrollStartTime = Date.now();
       let fastScrolled = false;
       window.addEventListener("scroll", () => {
@@ -172,22 +175,25 @@
         const now = Date.now();
         if (!fastScrolled && (currentScroll / maxScroll > 0.95) && (now - scrollStartTime < 5000)) {
           fastScrolled = true;
-          this.score -= 2;
-          this.saveSessionScore();
-          if (this.debug) {
-            console.group("[GhostRev] Layer 2 Interaction");
-            console.log("-2: Rapid scroll down entire page in <5s");
-            console.log("Total Score:", this.score, "→ Status:", this.getClassification());
-            console.groupEnd();
+          if (!sessionStorage.getItem("ghostrev_scrollfast_scored")) {
+            this.score -= 2;
+            sessionStorage.setItem("ghostrev_scrollfast_scored", "1");
+            this.saveSessionScore();
+            if (this.debug) {
+              console.group("[GhostRev] Layer 2 Interaction");
+              console.log("-2: Rapid scroll down entire page in <5s");
+              console.log("Total Score:", this.score, "→ Status:", this.getClassification());
+              console.groupEnd();
+            }
           }
         }
       });
 
-      // Non-commerce click
       document.addEventListener("click", (e) => {
         const path = window.location.pathname;
-        if (/\/blogs|\/pages|\/contact/i.test(path)) {
+        if (/\/blogs|\/pages|\/contact/i.test(path) && !sessionStorage.getItem("ghostrev_noncommerce_scored")) {
           this.score -= 2;
+          sessionStorage.setItem("ghostrev_noncommerce_scored", "1");
           this.saveSessionScore();
           if (this.debug) {
             console.group("[GhostRev] Layer 2 Interaction");
